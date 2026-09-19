@@ -1,0 +1,26 @@
+---
+description: 本仓库代码改动完成后自动部署到 lichzhang.net 远端
+alwaysApply: true
+---
+
+# score_board 自动远端部署
+
+在本项目（儿童积分计分板）中完成**功能性代码或样式修改**后，除非用户明确说「不要部署」，否则在任务结束前执行远端部署：
+
+```bash
+cd 项目根目录 && npm run deploy
+```
+
+若 `deploy.sh` 在 `restart.sh` 步骤失败，按脚本逻辑会 scp 备用；仍失败则：
+
+```bash
+ssh lichzhang@lichzhang.net "mkdir -p /data1/release/tools/score_board/scripts"
+scp scripts/restart.sh lichzhang@lichzhang.net:/data1/release/tools/score_board/scripts/restart.sh
+ssh lichzhang@lichzhang.net 'bash -lc "export NVM_DIR=\"\$HOME/.nvm\"; . \"\$NVM_DIR/nvm.sh\"; nvm use 20; cd /data1/release/tools/score_board && npm install --omit=dev && chmod +x scripts/restart.sh && scripts/restart.sh"'
+```
+
+部署完成后简要确认：PM2 `scoreboard-jifenban` 在线，或 https://lichzhang.net/tools/score_board/ 可访问。
+
+**不必部署**：纯文档/Readme 且用户未要求同步、仅回答问题、或用户说仅本地改。
+
+线上约定：`NEXT_BASE_PATH=/tools/score_board`，目录 `/data1/release/tools/score_board/`。

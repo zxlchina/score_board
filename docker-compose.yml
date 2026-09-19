@@ -1,0 +1,14 @@
+services:
+  score_board:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:13001:3000"
+    environment:
+      NODE_ENV: production
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET}
+      DATABASE_PATH: /app/data/score.db
+      NEXT_BASE_PATH: ${NEXT_BASE_PATH:-/tools/score_board}
+    volumes:
+      - ./data:/app/data

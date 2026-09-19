@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fff6ea;
+  --foreground: #3d2914;
+  --brand-50: #fff4d6;
+  --brand-100: #ffe7a8;
+  --brand-500: #ff8a3d;
+  --brand-600: #ff6b1a;
+  --brand-700: #e04e00;
+  --theme-border: #ffd9a8;
+  --header-border: #ffd9a8;
+}
+
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  min-height: 100dvh;
+  font-family: var(--font-cartoon), "Nunito", ui-rounded, "Hiragino Maru Gothic ProN", "PingFang SC", sans-serif;
+}
+
+@keyframes float-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(18px, -22px, 0);
+  }
+}
+
+@keyframes float-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-16px, 20px, 0);
+  }
+}
+
+@keyframes float-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(14px, 18px, 0);
+  }
+}
+
+@keyframes float-d {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-12px, -16px, 0);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.12) rotate(12deg);
+    opacity: 0.85;
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-float-a {
+  animation: float-a 11s ease-in-out infinite;
+}
+.animate-float-b {
+  animation: float-b 13s ease-in-out infinite;
+}
+.animate-float-c {
+  animation: float-c 15s ease-in-out infinite;
+}
+.animate-float-d {
+  animation: float-d 12s ease-in-out infinite;
+}
+.animate-bob {
+  animation: bob 2.4s ease-in-out infinite;
+}
+.animate-wiggle {
+  animation: wiggle 1.8s ease-in-out infinite;
+}
+.animate-twinkle {
+  animation: twinkle 2.2s ease-in-out infinite;
+}
+.animate-pop-in {
+  animation: pop-in 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-a,
+  .animate-float-b,
+  .animate-float-c,
+  .animate-float-d,
+  .animate-bob,
+  .animate-wiggle,
+  .animate-twinkle,
+  .animate-pop-in {
+    animation: none;
+  }
+}
+
+h1,
+h2,
+.font-cartoon {
+  letter-spacing: 0.01em;
+}
+
+@layer components {
+  .card {
+    @apply rounded-[1.6rem] border-2 bg-white/95 p-4 shadow-[0_8px_0_rgba(61,41,20,0.08)];
+    border-color: var(--theme-border, #ffd9a8);
+  }
+  .btn {
+    @apply inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-bold transition;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-[0_4px_0_#c2410c] hover:-translate-y-0.5 active:translate-y-0.5 disabled:opacity-50 disabled:shadow-none;
+  }
+  .btn-secondary {
+    @apply btn border-2 border-stone-200 bg-white text-stone-800 hover:bg-brand-50;
+  }
+  .input {
+    @apply w-full rounded-2xl border-2 border-stone-200 bg-white px-3 py-2.5 text-sm outline-none ring-brand-500 focus:ring-2;
+  }
+  .label {
+    @apply mb-1 block text-sm font-bold text-stone-700;
+  }
+  .page-title {
+    @apply text-2xl font-black text-stone-800;
+  }
+  .page-sub {
+    @apply text-sm font-medium text-stone-500;
+  }
+  .sticker-tab {
+    @apply rounded-full px-3.5 py-1.5 text-sm font-bold;
+  }
+}

@@ -1,0 +1,30 @@
+# 儿童积分计分板（score_board）
+
+给小朋友做**积分奖励与扣除**：**游客可查看**，**仅管理员可修改**（Node + SQLite）。
+
+- **本机开发**：`MyProject/score_board/`
+- **线上地址**：https://lichzhang.net/tools/score_board/
+- **线上目录**：`/data1/release/tools/score_board/`（`/tools/` 下还可部署其它工具）
+
+## 本地运行
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev    # http://localhost:3000，不设 basePath
+```
+
+## 部署
+
+```bash
+npm run deploy
+```
+
+见 **[部署.md](./部署.md)**。
+
+## 文档
+
+| 文档 | 说明 |
+|------|------|
+| [部署.md](./部署.md) | 发布到 lichzhang.net |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | 产品需求 |
