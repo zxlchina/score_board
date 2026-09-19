@@ -2,6 +2,9 @@ export const SOUND_STORAGE_KEY = "scoreboard-sound-on";
 
 export type SfxName = "click" | "select" | "reward" | "deduct" | "toggle";
 
+/** UI 合成音效总音量（相对各音色 gain），约 3 倍于原先默认。 */
+const MASTER_VOLUME = 3;
+
 type WindowWithAudio = Window & {
   webkitAudioContext?: typeof AudioContext;
   __scoreBoardAudio?: AudioContext;
@@ -41,8 +44,9 @@ function tone(
   const g = ctx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, start);
+  const peak = Math.min(gain * MASTER_VOLUME, 0.85);
   g.gain.setValueAtTime(0.0001, start);
-  g.gain.exponentialRampToValueAtTime(gain, start + 0.02);
+  g.gain.exponentialRampToValueAtTime(peak, start + 0.02);
   g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
   osc.connect(g);
   g.connect(ctx.destination);
