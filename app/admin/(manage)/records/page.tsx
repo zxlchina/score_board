@@ -2,7 +2,8 @@ import { RecordForm } from "@/components/RecordForm";
 import { RecordList } from "@/components/RecordList";
 import { SuccessChime } from "@/components/SuccessChime";
 import { getDb } from "@/lib/db";
-import { categories, children } from "@/lib/db/schema";
+import { children } from "@/lib/db/schema";
+import { listVisibleCategoriesForEntry } from "@/lib/services/categories";
 import { listRecentRecords } from "@/lib/services/scores";
 
 export const dynamic = "force-dynamic";
@@ -23,17 +24,7 @@ export default async function AdminRecordsPage({ searchParams }: Props) {
     .orderBy(children.sortOrder)
     .all();
 
-  const categoriesList = db
-    .select({
-      id: categories.id,
-      name: categories.name,
-      type: categories.type,
-      isActive: categories.isActive,
-      defaultPoints: categories.defaultPoints,
-    })
-    .from(categories)
-    .orderBy(categories.type, categories.sortOrder)
-    .all();
+  const categoriesList = listVisibleCategoriesForEntry();
 
   const recent = listRecentRecords(15);
 

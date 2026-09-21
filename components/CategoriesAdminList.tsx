@@ -1,19 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { updateCategoryAction } from "@/lib/actions/admin";
+import { deleteCategoryAction, updateCategoryAction } from "@/lib/actions/admin";
 import type { CategoryType } from "@/lib/db/schema";
+import type { CategoryAdminRow } from "@/lib/services/categories";
 
 type Filter = "all" | CategoryType;
 
-export type CategoryAdminRow = {
-  id: number;
-  name: string;
-  type: CategoryType;
-  isActive: boolean;
-  defaultPoints: number;
-  usageCount: number;
-};
+export type { CategoryAdminRow };
 
 export function CategoriesAdminList({ rows }: { rows: CategoryAdminRow[] }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -119,6 +113,27 @@ export function CategoriesAdminList({ rows }: { rows: CategoryAdminRow[] }) {
                     保存
                   </button>
                 </div>
+              </form>
+              <form
+                action={deleteCategoryAction}
+                className="mt-3"
+                onSubmit={(e) => {
+                  if (
+                    !window.confirm(
+                      "删除后将从列表消失，已有积分记录会保留原分类名称和分数。确定删除？",
+                    )
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
+              >
+                <input type="hidden" name="id" value={c.id} />
+                <button
+                  type="submit"
+                  className="btn w-full border-2 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 sm:w-auto"
+                >
+                  删除
+                </button>
               </form>
               {!c.isActive ? (
                 <p className="mt-2 text-xs text-stone-400">已禁用，新录入不可选</p>

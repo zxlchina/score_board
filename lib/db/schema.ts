@@ -22,6 +22,7 @@ export const categories = sqliteTable("categories", {
   defaultPoints: integer("default_points").notNull().default(5),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 });
 
 export const scoreRecords = sqliteTable("score_records", {

@@ -1,33 +1,11 @@
-import { eq, sql } from "drizzle-orm";
 import { CategoriesAdminList } from "@/components/CategoriesAdminList";
 import { createCategoryAction } from "@/lib/actions/admin";
-import { getDb } from "@/lib/db";
-import { categories, scoreRecords } from "@/lib/db/schema";
+import { listVisibleCategoriesWithUsage } from "@/lib/services/categories";
 
 export const dynamic = "force-dynamic";
 
-function listCategoriesWithUsage() {
-  const db = getDb();
-  return db
-    .select({
-      id: categories.id,
-      name: categories.name,
-      type: categories.type,
-      sortOrder: categories.sortOrder,
-      isActive: categories.isActive,
-      defaultPoints: categories.defaultPoints,
-      usageCount: sql<number>`count(${scoreRecords.id})`.as("usage_count"),
-    })
-    .from(categories)
-    .leftJoin(scoreRecords, eq(scoreRecords.categoryId, categories.id))
-    .groupBy(categories.id)
-    .orderBy(categories.type, categories.sortOrder, categories.id)
-    .all()
-    .map((r) => ({ ...r, usageCount: Number(r.usageCount) }));
-}
-
 export default function AdminCategoriesPage() {
-  const rows = listCategoriesWithUsage();
+  const rows = listVisibleCategoriesWithUsage();
 
   return (
     <div className="space-y-8">

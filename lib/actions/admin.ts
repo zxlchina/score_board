@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getAdminPassword, getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
-import { categories, children, scoreRecords } from "@/lib/db/schema";
+import { categories, children } from "@/lib/db/schema";
+import { notDeleted, softDeleteCategory } from "@/lib/services/categories";
+import { createScoreRecords } from "@/lib/services/records";
 
 async function assertAdmin() {
   const session = await getSession();
@@ -75,48 +77,35 @@ export async function updateChildAction(formData: FormData): Promise<void> {
 
 const recordSchema = z.object({
   childId: z.coerce.number().int().positive(),
-  categoryId: z.coerce.number().int().positive(),
   kind: z.enum(["reward", "deduct"]),
-  points: z.coerce.number().int().positive().max(9999),
+  categoryIds: z.array(z.coerce.number().int().positive()).min(1),
+  points: z.coerce.number().int().positive().max(9999).optional(),
   note: z.string().max(200).optional(),
 });
 
 export async function createRecordAction(formData: FormData): Promise<void> {
   await assertAdmin();
+  const categoryIds = formData.getAll("categoryId");
+  const pointsRaw = formData.get("points");
   const parsed = recordSchema.safeParse({
     childId: formData.get("childId"),
-    categoryId: formData.get("categoryId"),
     kind: formData.get("kind"),
-    points: formData.get("points"),
+    categoryIds,
+    points: pointsRaw === null || pointsRaw === "" ? undefined : pointsRaw,
     note: String(formData.get("note") ?? "").trim() || undefined,
   });
 
   if (!parsed.success) return;
 
-  const { childId, categoryId, kind, points, note } = parsed.data;
-  const db = getDb();
-
-  const child = db.select().from(children).where(eq(children.id, childId)).get();
-  if (!child) return;
-
-  const category = db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, categoryId))
-    .get();
-  if (!category || !category.isActive) return;
-  if (category.type !== kind) return;
-
-  const signedPoints = kind === "reward" ? points : -points;
-
-  db.insert(scoreRecords)
-    .values({
-      childId,
-      categoryId,
-      points: signedPoints,
-      note: note ?? null,
-    })
-    .run();
+  const { childId, kind, points, note } = parsed.data;
+  const created = createScoreRecords({
+    childId,
+    kind,
+    categoryIds: parsed.data.categoryIds,
+    points,
+    note,
+  });
+  if (!created.ok) return;
 
   revalidatePath("/");
   revalidatePath("/admin/records");
@@ -173,7 +162,22 @@ export async function updateCategoryAction(formData: FormData): Promise<void> {
     patch.defaultPoints = parseDefaultPoints(defaultPointsRaw);
   }
 
-  getDb().update(categories).set(patch).where(eq(categories.id, id)).run();
+  getDb()
+    .update(categories)
+    .set(patch)
+    .where(and(eq(categories.id, id), notDeleted))
+    .run();
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/records");
+}
+
+export async function deleteCategoryAction(formData: FormData): Promise<void> {
+  await assertAdmin();
+  const id = Number(formData.get("id"));
+  if (!Number.isFinite(id)) return;
+
+  softDeleteCategory(id);
+  revalidatePath("/", "layout");
   revalidatePath("/admin/categories");
   revalidatePath("/admin/records");
 }

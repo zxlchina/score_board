@@ -22,7 +22,7 @@ export function RecordForm({
 }) {
   const activeChildren = childrenList.filter((c) => c.isActive);
   const [kind, setKind] = useState<"reward" | "deduct">("reward");
-  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [points, setPoints] = useState(5);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -31,40 +31,49 @@ export function RecordForm({
     [categoriesList, kind],
   );
 
-  const selectedCategory = useMemo(
-    () => filteredCategories.find((c) => c.id === categoryId),
-    [filteredCategories, categoryId],
+  const selectedCategories = useMemo(
+    () =>
+      categoryIds
+        .map((id) => filteredCategories.find((c) => c.id === id))
+        .filter((c): c is Category => Boolean(c)),
+    [filteredCategories, categoryIds],
   );
 
+  const singleCategory = selectedCategories.length === 1 ? selectedCategories[0] : undefined;
+  const multi = selectedCategories.length > 1;
+
   useEffect(() => {
-    setCategoryId("");
+    setCategoryIds([]);
   }, [kind]);
 
   useEffect(() => {
-    if (selectedCategory) {
-      setPoints(selectedCategory.defaultPoints);
-    }
-  }, [selectedCategory]);
+    if (singleCategory) setPoints(singleCategory.defaultPoints);
+  }, [singleCategory]);
 
-  function selectCategory(id: number) {
-    setCategoryId(id);
-    const cat = filteredCategories.find((c) => c.id === id);
-    if (cat) setPoints(cat.defaultPoints);
+  function toggleCategory(id: number) {
+    setCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
     playSfx(kind === "reward" ? "select" : "deduct");
   }
 
   function resetToDefault() {
-    if (selectedCategory) setPoints(selectedCategory.defaultPoints);
+    if (singleCategory) setPoints(singleCategory.defaultPoints);
   }
 
-  const defaultPoints = selectedCategory?.defaultPoints ?? 5;
-  const pointsDirty = selectedCategory ? points !== selectedCategory.defaultPoints : false;
+  const defaultPoints = singleCategory?.defaultPoints ?? 5;
+  const pointsDirty = singleCategory ? points !== singleCategory.defaultPoints : false;
+  const sign = kind === "reward" ? "+" : "-";
+  const selectedSum = selectedCategories.reduce((n, c) => n + c.defaultPoints, 0);
+  const displayPoints = multi ? selectedSum : points;
 
-  const moreHint = selectedCategory
-    ? pointsDirty
-      ? `本次 ${points} 分（非默认）`
-      : `按默认 ${kind === "reward" ? "+" : "-"}${defaultPoints} 分`
-    : "先选择原因";
+  const moreHint = multi
+    ? `合计 ${sign}${selectedSum}，共 ${selectedCategories.length} 条`
+    : singleCategory
+      ? pointsDirty
+        ? `本次 ${points} 分（非默认）`
+        : `按默认 ${sign}${defaultPoints} 分`
+      : "先选择原因";
 
   return (
     <form action={createRecordAction} className="card space-y-4">
@@ -111,19 +120,22 @@ export function RecordForm({
       </div>
 
       <div>
-        <span className="label">原因（点选即可）</span>
-        <input type="hidden" name="categoryId" value={categoryId === "" ? "" : categoryId} />
+        <span className="label">原因（可多选，再点取消）</span>
+        {categoryIds.map((id) => (
+          <input key={id} type="hidden" name="categoryId" value={id} />
+        ))}
         {filteredCategories.length === 0 ? (
           <p className="text-sm text-stone-500">暂无可用分类，请先在「分类」里添加。</p>
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {filteredCategories.map((c) => {
-              const selected = categoryId === c.id;
+              const selected = categoryIds.includes(c.id);
               return (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => selectCategory(c.id)}
+                  aria-pressed={selected}
+                  onClick={() => toggleCategory(c.id)}
                   className={`rounded-2xl border-2 px-3 py-2.5 text-left text-sm transition ${
                     selected
                       ? kind === "reward"
@@ -136,7 +148,7 @@ export function RecordForm({
                     {c.name}
                   </span>
                   <span className="mt-0.5 block text-xs text-stone-500">
-                    默认 {kind === "reward" ? "+" : "-"}
+                    默认 {sign}
                     {c.defaultPoints}
                   </span>
                 </button>
@@ -146,7 +158,9 @@ export function RecordForm({
         )}
       </div>
 
-      {!moreOpen ? <input type="hidden" name="points" value={points} /> : null}
+      {!moreOpen && !multi && singleCategory ? (
+        <input type="hidden" name="points" value={points} />
+      ) : null}
 
       <div className="rounded-2xl border-2 border-stone-200 bg-white">
         <button
@@ -171,7 +185,11 @@ export function RecordForm({
                 <label className="label mb-0" htmlFor="record-points">
                   本次分值
                 </label>
-                {pointsDirty ? (
+                {multi ? (
+                  <span className="text-xs text-stone-500">
+                    {selectedCategories.length} 项合计，不可改
+                  </span>
+                ) : pointsDirty ? (
                   <button
                     type="button"
                     className="text-xs text-brand-700 hover:underline"
@@ -183,16 +201,23 @@ export function RecordForm({
               </div>
               <input
                 id="record-points"
-                name="points"
+                name={multi ? undefined : "points"}
                 type="number"
                 min={1}
                 max={9999}
-                className="input"
-                required
-                value={points}
+                className="input disabled:bg-stone-50 disabled:text-stone-600"
+                required={!multi}
+                value={selectedCategories.length === 0 ? "" : displayPoints}
                 onChange={(e) => setPoints(Number(e.target.value))}
-                disabled={!selectedCategory}
+                disabled={multi || !singleCategory}
+                readOnly={multi}
               />
+              {multi ? (
+                <p className="mt-1 text-xs text-stone-500">
+                  将按各原因默认分各记一条，合计 {sign}
+                  {selectedSum} 分。
+                </p>
+              ) : null}
             </div>
 
             <div>
@@ -206,9 +231,9 @@ export function RecordForm({
       <button
         type="submit"
         className="btn-primary w-full"
-        disabled={!categoryId || filteredCategories.length === 0}
+        disabled={categoryIds.length === 0 || filteredCategories.length === 0}
       >
-        提交
+        {categoryIds.length > 1 ? `提交 ${categoryIds.length} 条` : "提交"}
       </button>
     </form>
   );

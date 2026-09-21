@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
+import { notDeleted, softDeleteCategory } from "@/lib/services/categories";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,7 @@ export async function GET() {
   const items = db
     .select()
     .from(categories)
+    .where(notDeleted)
     .orderBy(categories.type, categories.sortOrder)
     .all();
   return jsonOk({ items });
@@ -76,10 +78,25 @@ export async function PATCH(req: Request) {
   const item = getDb()
     .update(categories)
     .set(patch)
-    .where(eq(categories.id, id))
+    .where(and(eq(categories.id, id), notDeleted))
     .returning()
     .get();
 
   if (!item) return jsonError("未找到", 404);
   return jsonOk({ item });
+}
+
+const deleteSchema = z.object({
+  id: z.number().int().positive(),
+});
+
+export async function DELETE(req: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return jsonError("未授权", auth.status);
+
+  const parsed = deleteSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return jsonError("参数错误", 400);
+
+  if (!softDeleteCategory(parsed.data.id)) return jsonError("未找到", 404);
+  return jsonOk({ ok: true });
 }
